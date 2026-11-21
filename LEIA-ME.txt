@@ -1,0 +1,23 @@
+RFE TRAINING SYSTEM — MVP
+
+COMO ABRIR
+1. Extraia o arquivo ZIP.
+2. Abra index.html em um navegador moderno (Chrome, Edge, Safari ou Firefox).
+3. O app inicia com um aluno e um programa de demonstração para você testar. Edite ou exclua esse exemplo.
+
+RECURSOS
+- Cadastro, edição e exclusão de alunos.
+- Programas com duração e orientações.
+- Sessões A/B/C etc.
+- Exercícios com séries, repetições, carga sugerida, RPE, descanso e observações.
+- Modo aluno para visualizar o treino e registrar cargas/RPE executados.
+- Histórico de sessões concluídas.
+- Exportação e importação de backup JSON.
+- Interface responsiva para celular e computador.
+- Estrutura PWA básica para instalação quando hospedada em HTTPS.
+
+LIMITAÇÃO IMPORTANTE DESTA VERSÃO
+Esta é uma primeira versão local (MVP). Os dados ficam armazenados no navegador/dispositivo em que o app for usado. O seletor de aluno no modo aluno é apenas uma demonstração, não é login nem proteção por senha. Portanto, não compartilhe dados reais de alunos nesta versão nem a publique como sistema multiusuário.
+
+PRÓXIMA ETAPA PARA USO REAL COM ALUNOS
+Configurar backend com autenticação individual, banco de dados online, permissões (treinador/aluno), sincronização entre dispositivos, política de privacidade e hospedagem HTTPS. Assim cada aluno terá seu próprio login e verá somente os próprios treinos.
