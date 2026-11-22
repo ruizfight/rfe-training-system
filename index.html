@@ -114,6 +114,247 @@ async function init(){setAuthMode('login');if(!sb){showAuth();message('Falha ao 
 // A tela só é liberada conforme o papel autenticado retornado pelo banco.
 const originalLoadStudentData=loadStudentData;
 loadStudentData=async function(){const {data:row,error}=await sb.from('students').select('*').eq('user_id',user.id).maybeSingle();if(error)throw error;if(!row){renderRoleInfo();return;}students=await fetchBundle([row],{trainer:false});selectedStudentId=row.id;selectedProgramId=activeProgram()?.id||null;selectedSessionId=activeProgram()?.sessions?.[0]?.id||null;await renderStudent();};
+/* RFE — recuperação de senha */
+
+$('authPassword').parentElement.insertAdjacentHTML('afterend', `
+<div class="field hide" id="authConfirmPasswordField">
+  <label>Confirmar nova senha</label>
+  <input id="authPasswordConfirm" type="password"
+    autocomplete="new-password" minlength="8"
+    placeholder="Digite a senha novamente">
+</div>`);
+
+$('authForm').insertAdjacentHTML('afterend', `
+<div id="authRecoveryActions" style="margin-top:12px;text-align:center">
+  <button type="button" class="link" id="forgotPasswordBtn"
+    style="background:transparent;border:0;padding:4px;font-size:12px">
+    Esqueci minha senha
+  </button>
+  <button type="button" class="link hide" id="backToLoginBtn"
+    style="background:transparent;border:0;padding:4px;font-size:12px">
+    Voltar para entrar
+  </button>
+</div>`);
+
+const baseSetAuthModeRFE = setAuthMode;
+
+setAuthMode = function(mode) {
+  baseSetAuthModeRFE(mode);
+
+  const forgot = mode === 'forgot';
+  const recovery = mode === 'recovery';
+  const signup = mode === 'signup';
+
+  $('authScreen').querySelector('.auth-switch')
+    .classList.toggle('hide', forgot || recovery);
+
+  $('authPassword').parentElement.classList.toggle('hide', forgot);
+  $('authPassword').required = !forgot;
+  $('authPassword').parentElement.querySelector('label').textContent =
+    recovery ? 'Nova senha' : 'Senha';
+
+  $('authEmail').parentElement.classList.toggle('hide', recovery);
+  $('authEmail').required = !recovery;
+
+  $('authConfirmPasswordField').classList.toggle('hide', !recovery);
+  $('authPasswordConfirm').required = recovery;
+
+  $('forgotPasswordBtn').classList.toggle('hide', mode !== 'login');
+  $('backToLoginBtn').classList.toggle('hide', mode !== 'forgot');
+
+  $('authPassword').autocomplete =
+    signup || recovery ? 'new-password' : 'current-password';
+
+  $('authTitle').textContent =
+    recovery ? 'Crie uma nova senha RFE.' :
+    forgot ? 'Recupere seu acesso RFE.' :
+    signup ? 'Crie seu acesso RFE.' :
+    'Acesse sua conta RFE.';
+
+  $('authSubtitle').textContent =
+    recovery ? 'Escolha uma nova senha para voltar a acessar seus treinos.' :
+    forgot ? 'Informe seu e-mail para receber o link de recuperação.' :
+    signup ? 'Use o mesmo e-mail cadastrado pelo treinador.' :
+    'Entre para consultar e acompanhar seus treinos.';
+
+  $('authSubmit').textContent =
+    recovery ? 'Salvar nova senha' :
+    forgot ? 'Enviar link de recuperação' :
+    signup ? 'Criar minha conta' : 'Entrar';
+};
+
+const baseSetBusyRFE = setBusy;
+
+setBusy = function(value) {
+  baseSetBusyRFE(value);
+  if (value) {
+    $('authSubmit').textContent =
+      authMode === 'forgot' ? 'Enviando link...' :
+      authMode === 'recovery' ? 'Salvando senha...' :
+      authMode === 'signup' ? 'Criando conta...' : 'Entrando...';
+  }
+};
+
+const baseAuthSubmitRFE = authSubmit;
+
+authSubmit = async function(e) {
+  if (authMode !== 'forgot' && authMode !== 'recovery') {
+    return baseAuthSubmitRFE(e);
+  }
+
+  e.preventDefault();
+  clearMessage();
+
+  if (!sb) {
+    message('Não foi possível conectar ao Supabase.', 'error');
+    return;
+  }
+
+  setBusy(true);
+
+  try {
+    if (authMode === 'forgot') {
+      const email = $('authEmail').value.trim().toLowerCase();
+
+      if (!email) {
+        throw new Error('Informe seu e-mail.');
+      }
+
+      const redirectTo =
+        `${window.location.origin}${window.location.pathname}?rfe_recovery=1`;
+
+      const { error } = await sb.auth.resetPasswordForEmail(
+        email,
+        { redirectTo }
+      );
+
+      if (error) throw error;
+
+      message(
+        'Se este e-mail estiver cadastrado, você receberá um link para criar uma nova senha. Confira também o spam.',
+        'success'
+      );
+
+    } else {
+      const password = $('authPassword').value;
+      const confirmation = $('authPasswordConfirm').value;
+
+      if (password.length < 8) {
+        throw new Error('A nova senha precisa ter pelo menos 8 caracteres.');
+      }
+
+      if (password !== confirmation) {
+        throw new Error('As senhas não coincidem.');
+      }
+
+      const { error } = await sb.auth.updateUser({ password });
+
+      if (error) throw error;
+
+      const recoveredEmail = user?.email || '';
+
+      await sb.auth.signOut();
+
+      user = null;
+      profile = null;
+
+      history.replaceState({}, document.title, window.location.pathname);
+
+      setAuthMode('login');
+
+      if (recoveredEmail) {
+        $('authEmail').value = recoveredEmail;
+      }
+
+      $('authPassword').value = '';
+      $('authPasswordConfirm').value = '';
+
+      message('Senha alterada com sucesso! Entre com sua nova senha.', 'success');
+    }
+
+  } catch (err) {
+    message(friendlyError(err), 'error');
+  } finally {
+    setBusy(false);
+  }
+};
+
+$('authForm').onsubmit = authSubmit;
+
+$('forgotPasswordBtn').onclick = () => {
+  setAuthMode('forgot');
+  $('authEmail').focus();
+};
+
+$('backToLoginBtn').onclick = () => setAuthMode('login');
+
+let rfeRecoveryEventSeen = false;
+
+if (sb) {
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      rfeRecoveryEventSeen = true;
+
+      if (session?.user) user = session.user;
+
+      showAuth();
+      setAuthMode('recovery');
+
+      message(
+        'Link validado! Agora crie sua nova senha.',
+        'success'
+      );
+    }
+  });
+}
+
+init = async function() {
+  setAuthMode('login');
+
+  if (!sb) {
+    showAuth();
+    message('Falha ao carregar a conexão Supabase.', 'error');
+    return;
+  }
+
+  const { data, error } = await sb.auth.getSession();
+
+  if (error) {
+    showAuth();
+    message(friendlyError(error), 'error');
+    return;
+  }
+
+  const recoveryRequested =
+    new URLSearchParams(window.location.search)
+      .get('rfe_recovery') === '1';
+
+  if (recoveryRequested || rfeRecoveryEventSeen) {
+    if (data.session?.user) user = data.session.user;
+
+    if (user) {
+      showAuth();
+      setAuthMode('recovery');
+      message('Link validado! Crie sua nova senha.', 'success');
+    } else {
+      showAuth();
+      setAuthMode('login');
+      message(
+        'O link expirou ou já foi utilizado. Solicite outro.',
+        'error'
+      );
+    }
+
+    return;
+  }
+
+  if (data.session?.user) {
+    user = data.session.user;
+    await enterApp();
+  } else {
+    showAuth();
+  }
+};
 init();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
