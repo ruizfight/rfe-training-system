@@ -118,6 +118,92 @@ init();
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 </script>
+<style>
+#rfe-rpe-guide{
+position:fixed;right:16px;bottom:16px;
+z-index:9;width:min(390px,calc(100vw - 32px));
+background:#151519;border:1px solid #75252c;
+border-radius:13px;color:#f5f5f6;
+box-shadow:0 12px 40px #000b;
+overflow:hidden;
+}
+#rfe-rpe-guide summary{
+padding:13px 15px;cursor:pointer;
+font-weight:900;color:#ff9ca1;
+list-style:none;font-size:13px;
+}
+#rfe-rpe-guide summary::-webkit-details-marker{display:none}
+#rfe-rpe-guide .rpe-content{
+padding:0 13px 14px;
+max-height:65vh;overflow:auto;
+}
+#rfe-rpe-guide p{font-size:12px;color:#ccc;line-height:1.5}
+#rfe-rpe-guide table{
+width:100%;border-collapse:collapse;
+font-size:11px;text-align:left;
+}
+#rfe-rpe-guide th{
+background:#301317;color:#ffb3b7;
+padding:9px 6px;
+}
+#rfe-rpe-guide td{
+padding:8px 6px;border-bottom:1px solid #333;
+}
+#rfe-rpe-guide td:first-child{
+font-weight:900;color:#ff858a;
+}
+#rfe-rpe-guide .rpe-example{
+padding:10px;background:#271317;
+border-left:3px solid #e3262e;
+border-radius:6px;
+}
+</style>
+
+<details id="rfe-rpe-guide">
+<summary>📊 ENTENDA A ESCALA RPE — VER TABELA</summary>
+<div class="rpe-content">
+<p>
+RPE é uma nota de 1 a 10 que indica o quanto
+uma série foi difícil. Ao terminar, pergunte:
+quantas repetições eu ainda conseguiria fazer
+mantendo uma boa técnica?
+</p>
+
+<table>
+<thead>
+<tr>
+<th>RPE</th>
+<th>Esforço</th>
+<th>Reps restantes</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>10</td><td>Máximo</td><td>0</td></tr>
+<tr><td>9</td><td>Quase máximo</td><td>1</td></tr>
+<tr><td>8</td><td>Muito difícil</td><td>2</td></tr>
+<tr><td><b>7</b></td><td>Difícil</td><td>3</td></tr>
+<tr><td>6</td><td>Moderado/difícil</td><td>4</td></tr>
+<tr><td>5</td><td>Moderado</td><td>5 ou mais</td></tr>
+<tr><td>4</td><td>Leve/moderado</td><td>5 ou mais</td></tr>
+<tr><td>3</td><td>Leve</td><td>5 ou mais</td></tr>
+<tr><td>2</td><td>Muito leve</td><td>5 ou mais</td></tr>
+<tr><td>1</td><td>Mínimo</td><td>5 ou mais</td></tr>
+</tbody>
+</table>
+
+<p class="rpe-example">
+<b>EXEMPLO PRÁTICO:</b><br>
+Se seu treino pede RPE 7, você deve terminar
+a série sentindo que conseguiria fazer
+aproximadamente mais 3 repetições com boa técnica.
+</p>
+
+<p>
+A relação entre RPE e repetições restantes é aproximada.
+RPE mede esforço, não dor. Preserve sempre a técnica.
+</p>
+</div>
+</details>
 </body>
 </html>
 
